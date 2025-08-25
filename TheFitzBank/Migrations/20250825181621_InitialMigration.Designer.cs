@@ -12,8 +12,8 @@ using TheFitzBankAPI.Infrastructure;
 namespace TheFitzBankAPI.Migrations
 {
     [DbContext(typeof(BankingContext))]
-    [Migration("20250825135931_AddTransactionContext")]
-    partial class AddTransactionContext
+    [Migration("20250825181621_InitialMigration")]
+    partial class InitialMigration
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)

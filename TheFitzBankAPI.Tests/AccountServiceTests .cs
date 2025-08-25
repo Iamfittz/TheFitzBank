@@ -6,7 +6,6 @@ using TheFitzBankAPI.Application;
 using TheFitzBankAPI.Application.Services;
 using TheFitzBankAPI.Domain;
 using TheFitzBankAPI.Infrastructure;
-using Xunit;
 
 namespace TheFitzBankAPI.Tests.Services;
 
@@ -21,7 +20,7 @@ public class AccountServiceTests : IDisposable {
             .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
             .Options;
         _context = new BankingContext(options);
-       
+
         var config = new MapperConfiguration(cfg => {
             cfg.CreateMap<Account, AccountResponse>();
         });
@@ -141,7 +140,6 @@ public class AccountServiceTests : IDisposable {
 
     [Fact]
     public async Task GetAllAccountsAsync_MultipleAccounts_ShouldReturnAllAccounts() {
-        // Arrange
         var accounts = new[]
         {
             new Account("ACC111111", "Artem ARVU", "USD", 1000m),
@@ -152,10 +150,8 @@ public class AccountServiceTests : IDisposable {
         await _context.Accounts.AddRangeAsync(accounts);
         await _context.SaveChangesAsync();
 
-        // Act
         var result = await _accountService.GetAllAccountsAsync();
 
-        // Assert
         Assert.True(result.IsSuccess);
         Assert.Equal(3, result.Data.Count);
         Assert.Contains(result.Data, a => a.AccountNumber == "ACC111111");
@@ -204,7 +200,7 @@ public class AccountServiceTests : IDisposable {
     [InlineData(0)]
     [InlineData(-100)]
     public async Task DepositAsync_InvalidAmount_ShouldHandleGracefully(decimal amount) {
-       
+
         var account = new Account("ACC123456", "Artem ARVU", "USD", 1000m);
 
         await _context.Accounts.AddAsync(account);
@@ -224,7 +220,6 @@ public class AccountServiceTests : IDisposable {
 
     [Fact]
     public async Task TransferAsync_ValidTransfer_ShouldTransferFunds() {
-        // Arrange
         var fromAccount = new Account("ACC111111", "Artem ARVU", "USD", 1000m);
         var toAccount = new Account("ACC222222", "Jane Smith", "USD", 500m);
 
@@ -264,14 +259,13 @@ public class AccountServiceTests : IDisposable {
 
         var result = await _accountService.TransferAsync(request);
 
-        Assert.True(result.IsSuccess); // Метод возвращает Success, но с IsSuccessful = false
+        Assert.True(result.IsSuccess);
         Assert.False(result.Data.Success);
         Assert.Equal("One or both accounts not found", result.Data.Message);
     }
 
     [Fact]
     public async Task TransferAsync_NonExistingToAccount_ShouldReturnFailureResponse() {
-        // Arrange
         var fromAccount = new Account("ACC111111", "Artem ARVU", "USD", 1000m);
         await _context.Accounts.AddAsync(fromAccount);
         await _context.SaveChangesAsync();
@@ -282,10 +276,8 @@ public class AccountServiceTests : IDisposable {
             Amount = 300m
         };
 
-        // Act
         var result = await _accountService.TransferAsync(request);
 
-        // Assert
         Assert.True(result.IsSuccess);
         Assert.False(result.Data.Success);
         Assert.Equal("One or both accounts not found", result.Data.Message);
@@ -293,7 +285,6 @@ public class AccountServiceTests : IDisposable {
 
     [Fact]
     public async Task TransferAsync_InsufficientFunds_ShouldReturnFailureResponse() {
-        // Arrange
         var fromAccount = new Account("ACC111111", "Artem ARVU", "USD", 100m);
         var toAccount = new Account("ACC222222", "Nicolas Jackson", "USD", 500m);
 
@@ -303,16 +294,12 @@ public class AccountServiceTests : IDisposable {
         var request = new TransferRequest {
             FromAccountNumber = "ACC111111",
             ToAccountNumber = "ACC222222",
-            Amount = 200m // Больше чем доступно на счету
+            Amount = 200m
         };
 
-        // Act
         var result = await _accountService.TransferAsync(request);
 
-        // Assert
         Assert.False(result.IsSuccess);
-        //Assert.False(result.Data.Success);
-        // Сообщение будет зависеть от логики Account.TransferTo()
     }
 
     #endregion
@@ -359,7 +346,7 @@ public class AccountServiceTests : IDisposable {
 
         var request = new WithdrawRequest {
             AccountNumber = "ACC123456",
-            Amount = 200m // Больше чем доступно на счету
+            Amount = 200m
         };
 
         var result = await _accountService.WithdrawAsync(request);
@@ -401,10 +388,8 @@ public class AccountServiceTests : IDisposable {
 
     [Fact]
     public async Task GetAccountAsync_NonExistingAccount_ShouldLogWarning() {
-        // Act
         await _accountService.GetAccountAsync("NONEXISTENT");
 
-        // Assert
         _loggerMock.Verify(
             x => x.Log(
                 LogLevel.Warning,

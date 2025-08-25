@@ -1,7 +1,8 @@
-using Microsoft.EntityFrameworkCore;
+п»їusing Microsoft.EntityFrameworkCore;
 using TheFitzBankAPI.Application;
 using TheFitzBankAPI.Application.Services;
 using TheFitzBankAPI.Infrastructure;
+using TheFitzBankAPI.Mapping;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -15,16 +16,17 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+// AutoMapper
+builder.Services.AddAutoMapper(typeof(MappingProfile));
+
 var app = builder.Build();
 
-// Swagger включаем всегда (и в Docker тоже)
 app.UseSwagger();
 app.UseSwaggerUI(c => {
     c.SwaggerEndpoint("/swagger/v1/swagger.json", "Banking API v1");
-    c.RoutePrefix = string.Empty; // Swagger на корне: http://localhost:8080/
+    c.RoutePrefix = string.Empty; // Swagger РЅР° РєРѕСЂРЅРµ: http://localhost:8080/
 });
 
-// В контейнере оставляем только HTTP
 if (!app.Environment.IsProduction()) {
     app.UseHttpsRedirection();
 }
