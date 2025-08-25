@@ -1,11 +1,11 @@
 ﻿namespace TheFitzBankAPI.Application {
     public interface IAccountService {
-        Task<OperationResponse> CreateAccountAsync(CreateAccountRequest request);
-        Task<AccountResponse?> GetAccountAsync(string accountNumber);
-        Task<IReadOnlyList<AccountResponse>> GetAllAccountsAsync();
-        Task<OperationResponse> DepositAsync(DepositRequest request);
-        Task<TransferResponse> TransferAsync(TransferRequest request);
-        Task<OperationResponse> WithdrawAsync(WithdrawRequest request);
+        Task<Result<AccountResponse>> CreateAccountAsync(CreateAccountRequest request);
+        Task<Result<AccountResponse>> GetAccountAsync(string accountNumber);
+        Task<Result<IReadOnlyList<AccountResponse>>> GetAllAccountsAsync();
+        Task<Result<AccountResponse>> DepositAsync(DepositRequest request);
+        Task<Result<TransferResponse>> TransferAsync(TransferRequest request);
+        Task<Result> WithdrawAsync(WithdrawRequest request);
     }
 
 

@@ -13,23 +13,26 @@ namespace TheFitzBankAPI.Controller {
         // POST /api/accounts
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] CreateAccountRequest request) {
-            var result = await _accountService.CreateAccountAsync(request);
-            if (!result.Success) return BadRequest(result);
+            Result<AccountResponse> result = await _accountService.CreateAccountAsync(request);
+            if (!result.IsSuccess) return BadRequest(result);
 
-            var created = (AccountResponse)result.Data!;
+            var created = result.Data;
             return CreatedAtAction(nameof(Get), new { accountNumber = created.AccountNumber }, created);
         }
         // GET /api/accounts/{accountNumber}
         [HttpGet("{accountNumber}")]
         public async Task<IActionResult> Get(string accountNumber) {
-            var account = await _accountService.GetAccountAsync(accountNumber);
-            return account is not null ? Ok(account) : NotFound("Account not found");
+            Result<AccountResponse> result = await _accountService.GetAccountAsync(accountNumber);
+
+            if (!result.IsSuccess) return BadRequest(result);
+            return Ok(result.Data);
         }
         // GET /api/accounts
         [HttpGet]
         public async Task<IActionResult> GetAll() {
-            var accounts = await _accountService.GetAllAccountsAsync();
-            return Ok(accounts);
+            Result<IReadOnlyList<AccountResponse>> result = await _accountService.GetAllAccountsAsync();
+            if (!result.IsSuccess) return BadRequest(result);
+            return Ok(result.Data);
         }
     }
 }
