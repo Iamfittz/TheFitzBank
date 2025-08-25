@@ -1,59 +1,55 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using TheFitzBankAPI.Application;
+using TheFitzBankAPI.Application.Requests;
 
 namespace TheFitzBankAPI.Controller {
     [ApiController]
-    [Route("api/[controller]")]
+    [Route("api/accounts")]
     public class AccountsController : ControllerBase {
         private readonly IAccountService _accountService;
 
         public AccountsController(IAccountService accountService) {
             this._accountService = accountService;
         }
-
-        // POST: api/accounts/create
-        [HttpPost("create")]
+        // POST /api/accounts
+        [HttpPost]
         public async Task<IActionResult> Create([FromBody] CreateAccountRequest request) {
             var result = await _accountService.CreateAccountAsync(request);
-            return result.Success ? Ok(result) : BadRequest(result);
-        }
+            if (!result.Success) return BadRequest(result);
 
-        // GET: api/accounts/{accountNumber}
+            var created = (AccountResponse)result.Data!;
+            return CreatedAtAction(nameof(Get), new { accountNumber = created.AccountNumber }, created);
+        }
+        // GET /api/accounts/{accountNumber}
         [HttpGet("{accountNumber}")]
         public async Task<IActionResult> Get(string accountNumber) {
             var account = await _accountService.GetAccountAsync(accountNumber);
-            return account != null ? Ok(account) : NotFound("Account not found");
+            return account is not null ? Ok(account) : NotFound("Account not found");
         }
-
-        // GET: api/accounts
+        // GET /api/accounts
         [HttpGet]
         public async Task<IActionResult> GetAll() {
             var accounts = await _accountService.GetAllAccountsAsync();
             return Ok(accounts);
         }
 
-        // POST: api/accounts/deposit
-        [HttpPost("deposit")]
-        public async Task<IActionResult> Deposit([FromBody] DepositRequest request) {
-            var result = await _accountService.DepositAsync(request);
+        // POST /api/accounts/{accountNumber}/deposits
+        [HttpPost("{accountNumber}/deposits")]
+        public async Task<IActionResult> Deposit(string accountNumber, [FromBody] DepositBody body) {
+            var result = await _accountService.DepositAsync(new DepositRequest(accountNumber, body.Amount));
             return result.Success ? Ok(result) : BadRequest(result);
         }
-
-        // POST: api/accounts/transfer
+        // POST /api/transfers
         [HttpPost("transfer")]
         public async Task<IActionResult> Transfer([FromBody] TransferRequest request) {
             var result = await _accountService.TransferAsync(request);
             return result.Success ? Ok(result) : BadRequest(result);
         }
-
-        [HttpPost("withdraw")]
-        public async Task<IActionResult> Withdraw([FromBody] WithdrawRequest request) {
-            var result = await _accountService.WithdrawAsync(request);
-            if (!result.Success) {
-                return BadRequest(result);
-            }
-            return Ok(result);
+        // POST /api/accounts/{accountNumber}/withdrawals
+        [HttpPost("{accountNumber}/withdrawals")]
+        public async Task<IActionResult> Withdraw(string accountNumber, [FromBody] WithdrawBody body) {
+            var result = await _accountService.WithdrawAsync(new WithdrawRequest(accountNumber, body.Amount));
+            return result.Success ? Ok(result) : BadRequest(result);
         }
-
     }
 }
