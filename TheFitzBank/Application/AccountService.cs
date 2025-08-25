@@ -1,8 +1,5 @@
 ﻿using AutoMapper;
-using Azure.Core;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using System.Collections.Generic;
 using TheFitzBankAPI.Domain;
 using TheFitzBankAPI.Infrastructure;
 
@@ -19,11 +16,11 @@ public sealed class AccountService : IAccountService {
         _db = db;
     }
 
-    public async Task<Result<AccountResponse>> CreateAccountAsync(CreateAccountRequest request) { 
+    public async Task<Result<AccountResponse>> CreateAccountAsync(CreateAccountRequest request) {
         _logger.LogInformation("CreateAccount requested: Owner={Owner}, InitialBalance={Balance}", request.OwnerName, request.InitialBalance);
-       
+
         string accNumber = "ACC" + Random.Shared.Next(100000, 999999);
-        var account = new Account( accNumber,request.OwnerName,"USD",request.InitialBalance);
+        var account = new Account(accNumber, request.OwnerName, "USD", request.InitialBalance);
 
         await _db.Accounts.AddAsync(account);
         try {
@@ -33,7 +30,7 @@ public sealed class AccountService : IAccountService {
             return Result<AccountResponse>.Failure(ex.Message);
 
         } catch (Exception ex) {
-            _logger.LogError(ex, "Create account failed with exception: Owner={Owner}",request.OwnerName);
+            _logger.LogError(ex, "Create account failed with exception: Owner={Owner}", request.OwnerName);
             return Result<AccountResponse>.Failure("Server error", errorCode: 500);
         }
 
@@ -44,20 +41,20 @@ public sealed class AccountService : IAccountService {
         return Result<AccountResponse>.Success(response);
     }
     public async Task<Result<AccountResponse>> GetAccountAsync(string accountNumber) {
-            _logger.LogInformation("GetAccount requested: AccountNumber={AccountNumber}", accountNumber);
+        _logger.LogInformation("GetAccount requested: AccountNumber={AccountNumber}", accountNumber);
 
-            var account = await _db.Accounts
-            .FirstOrDefaultAsync(a => a.AccountNumber == accountNumber);
+        var account = await _db.Accounts
+        .FirstOrDefaultAsync(a => a.AccountNumber == accountNumber);
 
-            if (account == null) {
-                _logger.LogWarning("Account not found: AccountNumber={AccountNumber}", accountNumber);
-                return Result<AccountResponse>.Failure("Account not found");
-            }
+        if (account == null) {
+            _logger.LogWarning("Account not found: AccountNumber={AccountNumber}", accountNumber);
+            return Result<AccountResponse>.Failure("Account not found");
+        }
 
-            _logger.LogInformation("Account found: AccountNumber={AccountNumber}, Owner={Owner}, Balance={Balance}",
-                account.AccountNumber, account.OwnerName, account.Balance);
+        _logger.LogInformation("Account found: AccountNumber={AccountNumber}, Owner={Owner}, Balance={Balance}",
+            account.AccountNumber, account.OwnerName, account.Balance);
 
-            return Result<AccountResponse>.Success(_mapper.Map<AccountResponse>(account));
+        return Result<AccountResponse>.Success(_mapper.Map<AccountResponse>(account));
     }
     public async Task<Result<IReadOnlyList<AccountResponse>>> GetAllAccountsAsync() {
         _logger.LogInformation("GetAllAccounts requested");
@@ -82,6 +79,7 @@ public sealed class AccountService : IAccountService {
         }
 
         account.Deposit(request.Amount);
+
         try {
             await _db.SaveChangesAsync();
         } catch (DbUpdateException ex) {
@@ -102,7 +100,7 @@ public sealed class AccountService : IAccountService {
     public async Task<Result<TransferResponse>> TransferAsync(TransferRequest request) {
         _logger.LogInformation("Transfer requested: From={From}, To={To}, Amount={Amount}",
             request.FromAccountNumber, request.ToAccountNumber, request.Amount);
-        
+
         var from = await _db.Accounts
             .FirstOrDefaultAsync(a => a.AccountNumber == request.FromAccountNumber);
         var to = await _db.Accounts
@@ -112,11 +110,14 @@ public sealed class AccountService : IAccountService {
             _logger.LogWarning("Transfer failed: One or both accounts not found. From={From}, To={To}",
                 request.FromAccountNumber, request.ToAccountNumber);
 
-            return Result< TransferResponse>.Success(new TransferResponse(request.FromAccountNumber, request.ToAccountNumber,
+            return Result<TransferResponse>.Success(new TransferResponse(request.FromAccountNumber, request.ToAccountNumber,
                 request.Amount, DateTime.UtcNow, false, "One or both accounts not found"));
         }
 
         try {
+            if (request.Amount > from.Balance) {
+                return Result<TransferResponse>.Failure("Insufficent funds to Transfer.");
+            }
             from.TransferTo(to, request.Amount);
             await _db.SaveChangesAsync();
 
@@ -145,6 +146,9 @@ public sealed class AccountService : IAccountService {
         }
 
         try {
+            if (request.Amount > account.Balance) {
+                return Result.Failure("Withdraw failed: Insufficient funds on the Account");
+            }
             account.Withdraw(request.Amount);
             await _db.SaveChangesAsync();
 
@@ -159,7 +163,7 @@ public sealed class AccountService : IAccountService {
         } catch (Exception ex) {
             _logger.LogError(ex, "Withdraw failed with exception: Account={AccountNumber}, Amount={Amount}",
                 request.AccountNumber, request.Amount);
-            return Result.Failure("Server error",errorCode:500);
+            return Result.Failure("Server error", errorCode: 500);
         }
     }
 

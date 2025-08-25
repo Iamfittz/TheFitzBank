@@ -1,16 +1,12 @@
-﻿using System;
-using Microsoft.EntityFrameworkCore.Migrations;
+﻿using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
-namespace TheFitzBankAPI.Migrations
-{
+namespace TheFitzBankAPI.Migrations {
     /// <inheritdoc />
-    public partial class AddTransactionContext : Migration
-    {
+    public partial class AddTransactionContext : Migration {
         /// <inheritdoc />
-        protected override void Up(MigrationBuilder migrationBuilder)
-        {
+        protected override void Up(MigrationBuilder migrationBuilder) {
             migrationBuilder.DropPrimaryKey(
                 name: "PK_Accounts",
                 table: "Accounts");
@@ -73,8 +69,7 @@ namespace TheFitzBankAPI.Migrations
 
             migrationBuilder.CreateTable(
                 name: "Transactions",
-                columns: table => new
-                {
+                columns: table => new {
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
                     Type = table.Column<string>(type: "nvarchar(max)", nullable: false),
@@ -84,8 +79,7 @@ namespace TheFitzBankAPI.Migrations
                     ToAccount = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     TransactionDate = table.Column<DateTime>(type: "datetime2", nullable: false)
                 },
-                constraints: table =>
-                {
+                constraints: table => {
                     table.PrimaryKey("PK_Transactions", x => x.Id);
                     table.ForeignKey(
                         name: "FK_Transactions_Accounts_AccountNumber",
@@ -102,8 +96,7 @@ namespace TheFitzBankAPI.Migrations
         }
 
         /// <inheritdoc />
-        protected override void Down(MigrationBuilder migrationBuilder)
-        {
+        protected override void Down(MigrationBuilder migrationBuilder) {
             migrationBuilder.DropTable(
                 name: "Transactions");
 

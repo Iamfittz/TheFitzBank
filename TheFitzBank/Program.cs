@@ -1,7 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using TheFitzBankAPI.Application;
 using TheFitzBankAPI.Application.Services;
-using TheFitzBankAPI.Domain;
 using TheFitzBankAPI.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);

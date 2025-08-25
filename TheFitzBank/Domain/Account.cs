@@ -28,29 +28,16 @@ public sealed class Account {
     }
 
     public void Deposit(decimal amount) {
-        EnsureActive();
-        EnsurePositive(amount);
-
         Balance = decimal.Round(Balance + amount, 2, MidpointRounding.ToZero);
         Touch();
     }
 
     public void Withdraw(decimal amount) {
-        EnsureActive();
-        EnsurePositive(amount);
-
-        if (Balance < amount)
-            throw new InvalidOperationException("Insufficient funds");
-
         Balance = decimal.Round(Balance - amount, 2, MidpointRounding.ToZero);
         Touch();
     }
 
     public void TransferTo(Account destination, decimal amount) {
-        if (destination is null) throw new ArgumentNullException(nameof(destination));
-        if (!string.Equals(Currency, destination.Currency, StringComparison.OrdinalIgnoreCase))
-            throw new InvalidOperationException("Cannot transfer between different currencies");
-
         Withdraw(amount);
         destination.Deposit(amount);
     }
@@ -60,14 +47,6 @@ public sealed class Account {
         IsClosed = true;
         ClosedAt = DateTime.UtcNow;
         Touch();
-    }
-
-    private static void EnsurePositive(decimal amount) {
-        if (amount <= 0) throw new ArgumentOutOfRangeException(nameof(amount), "Amount must be > 0");
-    }
-
-    private void EnsureActive() {
-        if (IsClosed) throw new InvalidOperationException("Account is closed");
     }
 
     private void Touch() => UpdatedAt = DateTime.UtcNow;

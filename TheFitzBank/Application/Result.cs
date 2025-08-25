@@ -13,7 +13,7 @@
         public static Result<T> Success(T data) => new Result<T>(true, data);
         public static Result<T> Failure(string errorMessage, int errorCode = 500) {
             return new Result<T>(false, default, errorMessage, errorCode);
-        } 
+        }
     }
 
     public class Result {
@@ -28,6 +28,6 @@
         public static Result Success() => new Result(true);
         public static Result Failure(string errorMessage, int? errorCode = 500) {
             return new Result(false, errorMessage, errorCode);
-        } 
+        }
     }
 }
