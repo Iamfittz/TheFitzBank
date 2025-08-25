@@ -1,6 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using TheFitzBankAPI.Application;
-using TheFitzBankAPI.Application.Requests;
 
 namespace TheFitzBankAPI.Controller {
     [ApiController]
@@ -31,25 +30,6 @@ namespace TheFitzBankAPI.Controller {
         public async Task<IActionResult> GetAll() {
             var accounts = await _accountService.GetAllAccountsAsync();
             return Ok(accounts);
-        }
-
-        // POST /api/accounts/{accountNumber}/deposits
-        [HttpPost("{accountNumber}/deposits")]
-        public async Task<IActionResult> Deposit(string accountNumber, [FromBody] DepositBody body) {
-            var result = await _accountService.DepositAsync(new DepositRequest(accountNumber, body.Amount));
-            return result.Success ? Ok(result) : BadRequest(result);
-        }
-        // POST /api/transfers
-        [HttpPost("transfer")]
-        public async Task<IActionResult> Transfer([FromBody] TransferRequest request) {
-            var result = await _accountService.TransferAsync(request);
-            return result.Success ? Ok(result) : BadRequest(result);
-        }
-        // POST /api/accounts/{accountNumber}/withdrawals
-        [HttpPost("{accountNumber}/withdrawals")]
-        public async Task<IActionResult> Withdraw(string accountNumber, [FromBody] WithdrawBody body) {
-            var result = await _accountService.WithdrawAsync(new WithdrawRequest(accountNumber, body.Amount));
-            return result.Success ? Ok(result) : BadRequest(result);
         }
     }
 }

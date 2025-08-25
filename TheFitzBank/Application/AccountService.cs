@@ -1,43 +1,29 @@
 ﻿using AutoMapper;
-using TheFitzBankAPI.Application.Validators;
+using Microsoft.EntityFrameworkCore;
 using TheFitzBankAPI.Domain;
+using TheFitzBankAPI.Infrastructure;
 
 namespace TheFitzBankAPI.Application.Services;
 
 public sealed class AccountService : IAccountService {
-    private readonly IAccountRepository _accountRepository;
+
     private readonly IMapper _mapper;
     private readonly ILogger<AccountService> _logger;
-    public AccountService(IAccountRepository accountRepository, IMapper mapper, ILogger<AccountService> logger) {
-        _accountRepository = accountRepository;
+    private readonly BankingContext _db;
+    public AccountService(IMapper mapper, ILogger<AccountService> logger, BankingContext db) {
         _mapper = mapper;
         _logger = logger;
+        _db = db;
     }
 
-    public async Task<OperationResponse> CreateAccountAsync(CreateAccountRequest request) {
-        _logger.LogInformation("CreateAccount requested: Owner={Owner}, InitialBalance={Balance}",
-            request.OwnerName, request.InitialBalance);
-
-        // todo: Replace validator instant with DI if validators gain dependencies.
-        var validator = new CreateAccountRequestValidator();
-        var validationResult = await validator.ValidateAsync(request);
-
-        if (!validationResult.IsValid) {
-            var errors = string.Join(", ", validationResult.Errors.Select(e => e.ErrorMessage));
-            _logger.LogWarning("CreateAccount validation failed: Owner={Owner}, Errors={Errors}",
-                request.OwnerName, errors);
-            return new OperationResponse(false, $"Validation failed: {errors}");
-        }
-
+    public async Task<OperationResponse> CreateAccountAsync(CreateAccountRequest request) { 
+        _logger.LogInformation("CreateAccount requested: Owner={Owner}, InitialBalance={Balance}", request.OwnerName, request.InitialBalance);
+       
         string accNumber = "ACC" + Random.Shared.Next(100000, 999999);
+        var account = new Account( accNumber,request.OwnerName,"USD",request.InitialBalance);
 
-        var account = new Account(
-            accNumber,
-            request.OwnerName,
-            "USD",
-            request.InitialBalance);
-
-        await _accountRepository.AddAsync(account);
+        await _db.Accounts.AddAsync(account);
+        await _db.SaveChangesAsync();
 
         _logger.LogInformation("Account created: AccountNumber={AccountNumber}, Owner={Owner}, Balance={Balance}",
             account.AccountNumber, account.OwnerName, account.Balance);
@@ -45,13 +31,11 @@ public sealed class AccountService : IAccountService {
         var response = _mapper.Map<AccountResponse>(account);
         return new OperationResponse(true, "Account created successfully", response);
     }
-
-
-
     public async Task<AccountResponse?> GetAccountAsync(string accountNumber) {
         _logger.LogInformation("GetAccount requested: AccountNumber={AccountNumber}", accountNumber);
 
-        var account = await _accountRepository.GetByAccountNumberAsync(accountNumber);
+        var account = await _db.Accounts
+            .FirstOrDefaultAsync(a => a.AccountNumber == accountNumber);
 
         if (account == null) {
             _logger.LogWarning("Account not found: AccountNumber={AccountNumber}", accountNumber);
@@ -63,41 +47,30 @@ public sealed class AccountService : IAccountService {
 
         return _mapper.Map<AccountResponse>(account);
     }
-
-
     public async Task<IReadOnlyList<AccountResponse>> GetAllAccountsAsync() {
         _logger.LogInformation("GetAllAccounts requested");
 
-        var accounts = await _accountRepository.GetAllAsync();
+        var accounts = await _db.Accounts
+            .AsNoTracking()
+            .ToListAsync();
 
         _logger.LogInformation("Accounts retrieved: Count={Count}", accounts.Count);
 
         return _mapper.Map<IReadOnlyList<AccountResponse>>(accounts);
     }
-
-
     public async Task<OperationResponse> DepositAsync(DepositRequest request) {
         _logger.LogInformation("Deposit requested: Account={AccountNumber}, Amount={Amount}",
             request.AccountNumber, request.Amount);
 
-        var validator = new DepositRequestValidator();
-        var validationResult = await validator.ValidateAsync(request);
-
-        if (!validationResult.IsValid) {
-            var errors = string.Join(", ", validationResult.Errors.Select(e => e.ErrorMessage));
-            _logger.LogWarning("Deposit validation failed for Account={AccountNumber}: {Errors}",
-                request.AccountNumber, errors);
-            return new OperationResponse(false, $"Validation failed: {errors}");
-        }
-
-        var account = await _accountRepository.GetByAccountNumberAsync(request.AccountNumber);
+        var account = await _db.Accounts
+            .FirstOrDefaultAsync(a => a.AccountNumber == request.AccountNumber);
         if (account == null) {
             _logger.LogWarning("Deposit failed: account not found: {AccountNumber}", request.AccountNumber);
             return new OperationResponse(false, "Account not found");
         }
 
         account.Deposit(request.Amount);
-        await _accountRepository.UpdateAsync(account);
+        await _db.SaveChangesAsync();
 
         _logger.LogInformation("Deposit successful: Account={AccountNumber}, NewBalance={Balance}",
             account.AccountNumber, account.Balance);
@@ -105,26 +78,14 @@ public sealed class AccountService : IAccountService {
         var response = _mapper.Map<AccountResponse>(account);
         return new OperationResponse(true, "Deposit successful", response);
     }
-
-
     public async Task<TransferResponse> TransferAsync(TransferRequest request) {
         _logger.LogInformation("Transfer requested: From={From}, To={To}, Amount={Amount}",
             request.FromAccountNumber, request.ToAccountNumber, request.Amount);
-
-        var validator = new TransferRequestValidator();
-        var validationResult = await validator.ValidateAsync(request);
-
-        if (!validationResult.IsValid) {
-            var errors = string.Join(", ", validationResult.Errors.Select(e => e.ErrorMessage));
-            _logger.LogWarning("Transfer validation failed: From={From}, To={To}, Errors={Errors}",
-                request.FromAccountNumber, request.ToAccountNumber, errors);
-
-            return new TransferResponse(request.FromAccountNumber, request.ToAccountNumber,
-                request.Amount, DateTime.UtcNow, false, $"Validation failed: {errors}");
-        }
-
-        var from = await _accountRepository.GetByAccountNumberAsync(request.FromAccountNumber);
-        var to = await _accountRepository.GetByAccountNumberAsync(request.ToAccountNumber);
+        
+        var from = await _db.Accounts
+            .FirstOrDefaultAsync(a => a.AccountNumber == request.FromAccountNumber);
+        var to = await _db.Accounts
+            .FirstOrDefaultAsync(a => a.AccountNumber == request.ToAccountNumber);
 
         if (from == null || to == null) {
             _logger.LogWarning("Transfer failed: One or both accounts not found. From={From}, To={To}",
@@ -136,8 +97,7 @@ public sealed class AccountService : IAccountService {
 
         try {
             from.TransferTo(to, request.Amount);
-            await _accountRepository.UpdateAsync(from);
-            await _accountRepository.UpdateAsync(to);
+            await _db.SaveChangesAsync();
 
             _logger.LogInformation("Transfer successful: From={From}, To={To}, Amount={Amount}",
                 request.FromAccountNumber, request.ToAccountNumber, request.Amount);
@@ -152,12 +112,12 @@ public sealed class AccountService : IAccountService {
                 request.Amount, DateTime.UtcNow, false, ex.Message);
         }
     }
-
     public async Task<OperationResponse> WithdrawAsync(WithdrawRequest request) {
         _logger.LogInformation("Withdraw requested: Account={AccountNumber}, Amount={Amount}",
             request.AccountNumber, request.Amount);
 
-        var account = await _accountRepository.GetByAccountNumberAsync(request.AccountNumber);
+        var account = await _db.Accounts
+            .FirstOrDefaultAsync(a => a.AccountNumber == request.AccountNumber);
         if (account == null) {
             _logger.LogWarning("Withdraw failed: Account not found: {AccountNumber}", request.AccountNumber);
             return new OperationResponse(false, "Account not found");
@@ -165,7 +125,7 @@ public sealed class AccountService : IAccountService {
 
         try {
             account.Withdraw(request.Amount);
-            await _accountRepository.UpdateAsync(account);
+            await _db.SaveChangesAsync();
 
             _logger.LogInformation("Withdraw successful: Account={AccountNumber}, NewBalance={Balance}",
                 account.AccountNumber, account.Balance);
