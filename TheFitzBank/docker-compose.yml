@@ -1,16 +1,23 @@
-﻿version: '3.8'
-
-services:
+﻿services:
   db:
     image: mcr.microsoft.com/mssql/server:2022-latest
-    container_name: sqlserver
+    container_name: fitzbank-sqlserver
     ports:
       - "1433:1433"
     environment:
       SA_PASSWORD: "YourStrong!Pass123"
       ACCEPT_EULA: "Y"
+      MSSQL_PID: "Express"
+    volumes:
+      - sqlserver_data:/var/opt/mssql
     networks:
       - banknet
+    healthcheck:
+      test: /opt/mssql-tools/bin/sqlcmd -S localhost -U SA -P 'YourStrong!Pass123' -Q 'SELECT 1' || exit 1
+      interval: 10s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
 
   api:
     build:
@@ -18,15 +25,21 @@ services:
       dockerfile: Dockerfile
     container_name: fitzbank-api
     ports:
-      - "8080:8080"                         # 👈 наружу:внутрь
+      - "8080:8080"
     depends_on:
-      - db
+      db:
+        condition: service_healthy
     environment:
-      ASPNETCORE_URLS: "http://+:8080"      # 👈 внутри контейнера слушаем 8080
-      ASPNETCORE_ENVIRONMENT: "Development" # чтобы Swagger точно рисовался (хоть мы и включили всегда)
-      ConnectionStrings__DefaultConnection: "Server=db;Database=BankingDb;User=sa;Password=YourStrong!Pass123;TrustServerCertificate=True"
+      ASPNETCORE_URLS: "http://+:8080"
+      ASPNETCORE_ENVIRONMENT: "Development"
+      ConnectionStrings__DefaultConnection: "Server=db;Database=BankingManagementDb;User=sa;Password=YourStrong!Pass123;TrustServerCertificate=True;Connection Timeout=30;"
     networks:
       - banknet
+    restart: on-failure
+
+volumes:
+  sqlserver_data:
 
 networks:
   banknet:
+    driver: bridge
