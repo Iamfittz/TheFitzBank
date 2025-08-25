@@ -49,7 +49,7 @@ public record AccountResponse(string AccountNumber, string OwnerName, decimal Ba
 
 public record TransferResponse(string FromAccountNumber, string ToAccountNumber, decimal Amount, DateTime TransferredAt, bool Success, string? Message = null);
 
-//public record OperationResponse<T>(bool Success, string Message, T Data);
+
 /// <summary>
 /// NotEqualAttribute
 /// </summary>

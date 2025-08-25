@@ -4,7 +4,7 @@ using TheFitzBankAPI.Domain;
 namespace TheFitzBankAPI.Infrastructure.RandomDataBase {
     public static class DbInitializer {
         private static readonly string[] FirstNames = new[] {
-        "Artem", "Volodymyr", "Vitaliy", "Alex", "Niko", "Maria", "Eugene", "Sophia", 
+        "Artem", "Volodymyr", "Vitaliy", "Alex", "Niko", "Maria", "Eugene", "Sophia",
         "Anastasia", "Isabella", "Denis", "Sergey", "Dmytro", "Ivan", "Valeriy"
     };
 

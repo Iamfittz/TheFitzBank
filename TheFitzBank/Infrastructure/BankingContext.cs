@@ -12,18 +12,18 @@ namespace TheFitzBankAPI.Infrastructure {
 
         protected override void OnModelCreating(ModelBuilder modelBuilder) {
             modelBuilder.Entity<Account>()
-                .HasKey(a => a.AccountNumber);  
+                .HasKey(a => a.AccountNumber);
             modelBuilder.Entity<Account>()
                 .Property(a => a.Balance)
-                .HasColumnType("decimal(18,2)"); 
+                .HasColumnType("decimal(18,2)");
 
             modelBuilder.Entity<Transaction>()
                 .HasKey(t => t.Id);
             modelBuilder.Entity<Transaction>()
-                .HasOne<Account>()  
+                .HasOne<Account>()
                 .WithMany()
                 .HasForeignKey(t => t.AccountNumber)
-                .OnDelete(DeleteBehavior.Restrict); 
+                .OnDelete(DeleteBehavior.Restrict);
             modelBuilder.Entity<Transaction>()
                 .Property(a => a.Amount)
                 .HasColumnType("decimal(18,2)");
