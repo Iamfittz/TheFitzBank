@@ -12,7 +12,7 @@ A custom ASP.NET CORE applications with 1k pre-loaded accounts for testing purpo
 # Quick Start
 Install Docker Desktop
 
-# Run App
+# Run App (Recomended)
 ## Start SQL Server
 ```
 docker run -d --name fitzbank-sql \
@@ -28,7 +28,18 @@ docker run -d --name fitzbank-api \
   -p 8080:8080 \
   your-dockerhub-username/thefitzbank-api
 ```
-# Swagger UI: [http://localhost:8080](url)
+**Swagger UI**: http://localhost:8080
+
+## Run App Locally
+```
+git clone https://github.com/Iamfittz/TheFitzBank.git
+```
+- cd TheFitzBank/TheFitzBank
+- dotnet restore
+- dotnet ef database update
+- dotnet run
+
+## Start SQL Server
 ## API Endpoints
 Accounts
 
