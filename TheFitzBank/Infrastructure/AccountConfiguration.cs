@@ -24,7 +24,7 @@ namespace TheFitzBankAPI.Infrastructure {
                    .IsRequired();
 
             builder.Property(a => a.Balance)
-                   .HasColumnType("decimal(18,2)")  
+                   .HasColumnType("decimal(18,2)")
                    .IsRequired();
 
             builder.Property(a => a.CreatedAt)

@@ -8,7 +8,7 @@ public sealed class Account {
     public string Currency { get; private set; } = "USD";
 
     public DateTime CreatedAt { get; private set; }
-    public DateTime UpdatedAt { get; private set; } 
+    public DateTime UpdatedAt { get; private set; }
     public bool IsClosed { get; private set; }
     public DateTime? ClosedAt { get; private set; }
 
